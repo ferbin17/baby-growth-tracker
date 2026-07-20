@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardCards } from "@/components/DashboardCards";
-import { HeightChart } from "@/components/HeightChart";
-import { WeightChart } from "@/components/WeightChart";
 import { getBabyProfile, getMeasurements } from "@/services/baby-service";
 import { hasPendingMeasurements } from "@/utils/measurement";
 import type { BabyProfile, Measurement } from "@/types";
@@ -71,10 +69,6 @@ export function Dashboard() {
       </header>
 
       <DashboardCards />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <WeightChart />
-        <HeightChart />
-      </div>
     </main>
   );
 }
