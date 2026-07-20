@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { resetMeasurementsForBaby, updateBabyProfile, upsertBabyProfile, createMeasurementsForBaby, getMeasurements } from "@/services/baby-service";
@@ -67,25 +67,33 @@ export function BabyForm({ existingProfile, currentStep, setStep, editOnlyMode =
     [existingProfile]
   );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<BabyFormValues>({
-    defaultValues: initialValues,
-  });
+const {
+  register,
+  handleSubmit,
+  reset,
+  setError,
+  control,
+  setValue,
+  formState: { errors, isSubmitting },
+} = useForm<BabyFormValues>({
+  defaultValues: initialValues,
+});
 
   useEffect(() => {
     reset(initialValues);
   }, [initialValues, reset]);
 
-  const previousAutoStartDate = useRef("");
-  const birthDateValue = watch("birthDate");
-  const startDateValue = watch("startDate");
+const previousAutoStartDate = useRef("");
+
+const birthDateValue = useWatch({
+  control,
+  name: "birthDate",
+});
+
+const startDateValue = useWatch({
+  control,
+  name: "startDate",
+});
 
   useEffect(() => {
     if (!birthDateValue) {

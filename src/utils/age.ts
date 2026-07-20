@@ -1,4 +1,4 @@
-import { differenceInDays, differenceInMonths, format } from "date-fns";
+import { differenceInDays, format } from "date-fns";
 
 export function getAgeLabel(birthDate: Date, targetDate: Date) {
   const days = differenceInDays(targetDate, birthDate);

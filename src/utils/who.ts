@@ -37,7 +37,10 @@ export function interpolateWhoPoint(
   }
 
   if (ageDays >= last.ageDays) {
-    return last;
+    return {
+      ...last,
+      ageDays,
+    };
   }
 
   let left = first;
@@ -70,7 +73,7 @@ function interpolate(
   start: number,
   end: number,
   ratio: number
-) {
+): number {
   return start + (end - start) * ratio;
 }
 
@@ -147,7 +150,15 @@ export async function loadWhoData(
     );
   }
 
-  return (await response.json()) as WhoPoint[];
+  const data = (await response.json()) as WhoPoint[];
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(
+      `Invalid WHO data: ${fileName}`
+    );
+  }
+
+  return data;
 }
 
 function normalCDF(x: number): number {
@@ -217,7 +228,6 @@ function inverseNormalCDF(p: number): number {
   const phigh = 1 - plow;
 
   let q: number;
-  let r: number;
 
   if (p < plow) {
     q = Math.sqrt(-2 * Math.log(p));
@@ -242,7 +252,8 @@ function inverseNormalCDF(p: number): number {
   }
 
   q = p - 0.5;
-  r = q * q;
+
+  const r = q * q;
 
   return (
     (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) *
