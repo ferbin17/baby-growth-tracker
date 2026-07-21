@@ -130,7 +130,7 @@ export async function saveBabyProfile(
 }
 
 export async function updateBabyProfile(id: number, profile: BabyProfileWrite) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("babies")
     .update(
       toBabyRow({
@@ -138,9 +138,17 @@ export async function updateBabyProfile(id: number, profile: BabyProfileWrite) {
         updatedAt: new Date().toISOString(),
       }),
     )
-    .eq("id", id);
+    .eq("id", id)
+    .select("*")
+    .single();
 
   if (error) throw error;
+
+  const updatedBaby = fromBabyRow(data as BabyRow);
+
+  useAuthStore.getState().setBaby(updatedBaby);
+
+  return updatedBaby;
 }
 
 export async function upsertBabyProfile(profile: BabyProfileWrite) {
