@@ -89,7 +89,7 @@ export default function ProfilePage() {
           }
         : current
     );
-    router.refresh();
+    router.push("/");
   }
 
   async function handleResetProfile() {
