@@ -7,15 +7,10 @@ import {
   getMeasurements,
 } from "@/services/baby-service";
 import { formatDisplayDate, getAgeLabel } from "@/utils/age";
-import { getGrowthStatus } from "@/utils/growth";
+import { getWeightForAgeReference } from "@/utils/growth";
 import { formatHeightLabel, formatWeightLabel } from "@/utils/format";
 import { GrowthStatusChart } from "@/components/GrowthStatusChart";
-import {
-  calculatePercentileFromMeasurement,
-  interpolateWhoPoint,
-  loadWhoData,
-  type WhoPoint,
-} from "@/utils/who";
+import { loadWhoData, type WhoPoint } from "@/utils/who";
 import type { BabyProfile, Measurement } from "@/types";
 import { getNextUpcomingMeasurement } from "@/utils/measurement";
 
@@ -52,15 +47,10 @@ export function DashboardCards() {
     void load();
   }, []);
 
-  const latestWeightPercentile = useMemo(() => {
-    if (!latest || latest.weightKg == null || whoWeight.length === 0) {
-      return null;
-    }
-
-    const point = interpolateWhoPoint(whoWeight, latest.ageDays);
-
-    return calculatePercentileFromMeasurement(latest.weightKg, point);
-  }, [latest, whoWeight]);
+  const weightReference = useMemo(
+    () => getWeightForAgeReference(measurements, whoWeight),
+    [measurements, whoWeight],
+  );
 
   if (!baby || !latest) {
     return null;
@@ -88,15 +78,25 @@ export function DashboardCards() {
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-slate-500">Growth status</p>
+            <p className="text-sm font-medium text-slate-500">Weight-for-age reference</p>
 
             <p className="text-xl font-semibold text-slate-900">
-              {getGrowthStatus(latestWeightPercentile)}
+              {weightReference.label}
+            </p>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {weightReference.description}
             </p>
           </div>
 
-          <div className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-            Stable and trending
+          <div
+            className={
+              weightReference.tone === "caution"
+                ? "rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800"
+                : "rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700"
+            }
+          >
+            {weightReference.trendLabel}
           </div>
         </div>
 
