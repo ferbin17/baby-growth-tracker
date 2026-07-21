@@ -13,6 +13,7 @@ import {
   type WhoPoint,
 } from "@/utils/who";
 import type { BabyProfile, Measurement } from "@/types";
+import { getNextUpcomingMeasurement } from "@/utils/measurement";
 
 export function DashboardCards() {
   const [baby, setBaby] = useState<BabyProfile | null>(null);
@@ -43,6 +44,10 @@ export function DashboardCards() {
     () => getLatestMeasurement(measurements),
     [measurements]
   );
+  const nextMeasurement = useMemo(
+  () => getNextUpcomingMeasurement(measurements),
+  [measurements]
+);
 
   const latestWeightPercentile = useMemo(() => {
     if (!latest || !latest.weightKg || whoWeight.length === 0) {
@@ -90,9 +95,13 @@ export function DashboardCards() {
       />
 
       <MetricCard
-        title="Next measurement"
-        value={formatDisplayDate(new Date())}
-      />
+  title="Next measurement"
+  value={
+    nextMeasurement
+      ? formatDisplayDate(new Date(nextMeasurement.date))
+      : "Completed"
+  }
+/>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
         <div className="flex flex-wrap items-center justify-between gap-3">

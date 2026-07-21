@@ -35,12 +35,22 @@ export function getCurrentRecordMeasurement(measurements: Measurement[]) {
 }
 
 /** Next scheduled frequency date after today (filled or not). */
-export function getNextUpcomingMeasurement(measurements: Measurement[]) {
+export function getNextUpcomingMeasurement(
+  measurements: Measurement[]
+) {
   const now = today();
+
   return (
     [...measurements]
-      .filter((measurement) => new Date(measurement.date) > now)
-      .sort((a, b) => a.ageDays - b.ageDays)[0] ?? null
+      .filter(
+        (measurement) =>
+          new Date(measurement.date).getTime() > now.getTime()
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.date).getTime() -
+          new Date(b.date).getTime()
+      )[0] ?? null
   );
 }
 
