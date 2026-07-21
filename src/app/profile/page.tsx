@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { deleteBabyProfile, getBabyProfile, updateBabyProfile } from "@/services/baby-service";
 import type { BabyProfile } from "@/types";
 
@@ -76,20 +77,25 @@ export default function ProfilePage() {
       return;
     }
 
-    await updateBabyProfile(profile.id, {
-      username: result.data.username,
-      passcode: result.data.passcode,
-    });
-    setProfile((current) =>
-      current
-        ? {
-            ...current,
-            username: result.data.username,
-            passcode: result.data.passcode,
-          }
-        : current,
-    );
-    router.push("/");
+    try {
+      await updateBabyProfile(profile.id, {
+        username: result.data.username,
+        passcode: result.data.passcode,
+      });
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              username: result.data.username,
+              passcode: result.data.passcode,
+            }
+          : current,
+      );
+      toast.success("Profile updated.");
+      router.push("/");
+    } catch {
+      toast.error("Could not update the profile. Please try again.");
+    }
   }
 
   async function handleResetProfile() {
@@ -102,7 +108,10 @@ export default function ProfilePage() {
     setIsResetting(true);
     try {
       await deleteBabyProfile(profile.id);
+      toast.success("Profile and measurements reset.");
       router.replace("/setup");
+    } catch {
+      toast.error("Could not reset the profile. Please try again.");
     } finally {
       setIsResetting(false);
     }

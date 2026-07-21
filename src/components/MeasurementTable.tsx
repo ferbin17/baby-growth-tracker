@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   getMeasurements,
   upsertMeasurement,
@@ -107,27 +108,40 @@ export function MeasurementTable({ babyId }: MeasurementTableProps) {
         return updated ?? row;
       });
       setMeasurements(nextMeasurements);
+      toast.success("Measurements saved.");
+    } catch {
+      toast.error("Could not save measurements. Please try again.");
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleDone() {
-    if (babyId) {
-      await updateBabyProfile(babyId, { stage: "complete" });
+    try {
+      if (babyId) {
+        await updateBabyProfile(babyId, { stage: "complete" });
+      }
+      toast.success("Measurements complete. Your dashboard is ready.");
+      router.push("/");
+    } catch {
+      toast.error("Could not complete setup. Please try again.");
     }
-    router.push("/");
   }
 
   async function handleClear(id?: number) {
     if (!id) return;
-    await deleteMeasurement(id);
-    setMeasurements((current) => current.filter((item) => item.id !== id));
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[id];
-      return next;
-    });
+    try {
+      await deleteMeasurement(id);
+      setMeasurements((current) => current.filter((item) => item.id !== id));
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+      toast.success("Measurement cleared.");
+    } catch {
+      toast.error("Could not clear the measurement. Please try again.");
+    }
   }
 
   return (

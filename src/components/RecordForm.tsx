@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { ensureMeasurementsForBaby, upsertMeasurement } from "@/services/baby-service";
 import { formatDisplayDate, formatAgeFromDays } from "@/utils/age";
 import { frequencyLabel, getCurrentRecordMeasurement } from "@/utils/measurement";
@@ -99,10 +100,13 @@ export function RecordForm({ baby }: RecordFormProps) {
         heightCm: height,
         notes: draft.notes.trim() === "" ? undefined : draft.notes.trim(),
       });
+      toast.success("Check-in saved.");
       router.push("/");
       router.refresh();
     } catch {
-      setError("Could not save this measurement. Please try again.");
+      const message = "Could not save this measurement. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }

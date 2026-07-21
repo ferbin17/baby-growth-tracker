@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   resetMeasurementsForBaby,
   updateBabyProfile,
@@ -236,80 +237,87 @@ export function BabyForm({
       : activeStep < stepSchemas.length - 1
         ? stageForStep(activeStep + 1)
         : ("measure" as SetupStage);
-    const savedId = await saveDraft(values, currentStage);
+    try {
+      const savedId = await saveDraft(values, currentStage);
 
-    if (activeStep < stepSchemas.length - 1) {
-      if (editOnlyMode) {
-        const existingMeasurements = await getMeasurements(savedId);
-        const scheduleChanged = Boolean(
-          existingProfile &&
-          (existingProfile.measurementFrequency !== values.measurementFrequency ||
-            existingProfile.startDate !== values.startDate ||
-            existingProfile.birthDate !== values.birthDate),
-        );
+      if (activeStep < stepSchemas.length - 1) {
+        if (editOnlyMode) {
+          const existingMeasurements = await getMeasurements(savedId);
+          const scheduleChanged = Boolean(
+            existingProfile &&
+            (existingProfile.measurementFrequency !== values.measurementFrequency ||
+              existingProfile.startDate !== values.startDate ||
+              existingProfile.birthDate !== values.birthDate),
+          );
 
-        const profileData = {
-          id: savedId,
-          name: existingProfile?.name ?? values.name,
-          username: existingProfile?.username,
-          gender: existingProfile?.gender ?? values.gender,
-          birthDate: values.birthDate,
-          startDate: values.startDate,
-          passcode: existingProfile?.passcode ?? values.passcode,
-          birthWeightKg: existingProfile?.birthWeightKg ?? values.birthWeightKg,
-          birthHeightCm: existingProfile?.birthHeightCm ?? values.birthHeightCm,
-          measurementFrequency: values.measurementFrequency as MeasurementFrequency,
-          createdAt: existingProfile?.createdAt ?? new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+          const profileData = {
+            id: savedId,
+            name: existingProfile?.name ?? values.name,
+            username: existingProfile?.username,
+            gender: existingProfile?.gender ?? values.gender,
+            birthDate: values.birthDate,
+            startDate: values.startDate,
+            passcode: existingProfile?.passcode ?? values.passcode,
+            birthWeightKg: existingProfile?.birthWeightKg ?? values.birthWeightKg,
+            birthHeightCm: existingProfile?.birthHeightCm ?? values.birthHeightCm,
+            measurementFrequency: values.measurementFrequency as MeasurementFrequency,
+            createdAt: existingProfile?.createdAt ?? new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
 
-        if (existingMeasurements.length === 0) {
-          await createMeasurementsForBaby(savedId, profileData);
-        } else if (scheduleChanged) {
-          await resetMeasurementsForBaby(savedId, profileData);
+          if (existingMeasurements.length === 0) {
+            await createMeasurementsForBaby(savedId, profileData);
+          } else if (scheduleChanged) {
+            await resetMeasurementsForBaby(savedId, profileData);
+          }
+
+          toast.success("Growth schedule updated.");
+          router.push("/measurements");
+          return;
         }
-
-        router.push("/measurements");
+        toast.success(activeStep === 0 ? "Baby details saved." : "Growth schedule saved.");
+        setStep?.((current) => Math.min(current + 1, stepSchemas.length - 1));
         return;
       }
-      setStep?.((current) => Math.min(current + 1, stepSchemas.length - 1));
-      return;
+
+      const validated = schema.parse(values);
+      const profileData = {
+        name: validated.name,
+        username: validated.username,
+        gender: validated.gender as Gender,
+        birthDate: validated.birthDate,
+        startDate: validated.startDate,
+        passcode: validated.passcode,
+        birthWeightKg: validated.birthWeightKg,
+        birthHeightCm: validated.birthHeightCm,
+        measurementFrequency: validated.measurementFrequency as MeasurementFrequency,
+        stage: "measure" as SetupStage,
+      };
+
+      const babyId = savedId;
+      const existingMeasurements = await getMeasurements(babyId);
+
+      if (existingProfile?.id) {
+        await updateBabyProfile(existingProfile.id, profileData);
+      } else {
+        await updateBabyProfile(babyId, profileData);
+      }
+
+      if (existingMeasurements.length === 0) {
+        await createMeasurementsForBaby(babyId, {
+          id: babyId,
+          ...profileData,
+          createdAt: existingProfile?.createdAt ?? new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      toast.success("Setup complete. Add the first measurements to continue.");
+      router.refresh();
+      router.push("/measurements");
+    } catch {
+      toast.error("Could not save the profile. Please try again.");
     }
-
-    const validated = schema.parse(values);
-    const profileData = {
-      name: validated.name,
-      username: validated.username,
-      gender: validated.gender as Gender,
-      birthDate: validated.birthDate,
-      startDate: validated.startDate,
-      passcode: validated.passcode,
-      birthWeightKg: validated.birthWeightKg,
-      birthHeightCm: validated.birthHeightCm,
-      measurementFrequency: validated.measurementFrequency as MeasurementFrequency,
-      stage: "measure" as SetupStage,
-    };
-
-    const babyId = savedId;
-    const existingMeasurements = await getMeasurements(babyId);
-
-    if (existingProfile?.id) {
-      await updateBabyProfile(existingProfile.id, profileData);
-    } else {
-      await updateBabyProfile(babyId, profileData);
-    }
-
-    if (existingMeasurements.length === 0) {
-      await createMeasurementsForBaby(babyId, {
-        id: babyId,
-        ...profileData,
-        createdAt: existingProfile?.createdAt ?? new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    }
-
-    router.refresh();
-    router.push("/measurements");
   }
 
   return (

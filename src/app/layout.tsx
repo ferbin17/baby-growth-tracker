@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.35),transparent_45%),linear-gradient(135deg,#f8fbff_0%,#fdfefe_100%)] text-slate-900">
         {children}
-        <Toaster position="top-right" />
+        <Toaster position="top-right" richColors closeButton />
         <SpeedInsights />
       </body>
     </html>
