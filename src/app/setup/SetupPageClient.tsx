@@ -85,6 +85,8 @@ export default function SetupPageClient() {
 
   const effectiveStep = editOnlyMode ? 1 : currentStep;
 
+  const showLoginButton = effectiveStep === 0 && !baby;
+
   const stepGuidance = [
     {
       title: "Baby details",
@@ -143,21 +145,33 @@ export default function SetupPageClient() {
     <main className="flex h-full min-h-0 w-full overflow-hidden bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-10 overflow-hidden lg:grid lg:grid-cols-[1.2fr_0.8fr]">
         <section className="min-h-0 overflow-y-auto rounded-4xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/40">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-3 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700">
-              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
-              Start tracking growth
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-3 rounded-full bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700">
+                <span className="inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
+                Start tracking growth
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
+                  Baby growth tracker
+                </p>
+
+                <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+                  Track your baby’s growth with clear, simple progress insights.
+                </h1>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm uppercase tracking-[0.32em] text-slate-400">
-                Baby growth tracker
-              </p>
-
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
-                Track your baby’s growth with clear, simple progress insights.
-              </h1>
-            </div>
+            {showLoginButton && (
+              <button
+                type="button"
+                onClick={() => router.push("/login")}
+                className="shrink-0 rounded-2xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+              >
+                Sign in
+              </button>
+            )}
           </div>
 
           <div className="mt-10">

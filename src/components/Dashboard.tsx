@@ -10,12 +10,19 @@ import {
 } from "@/services/baby-service";
 import { hasPendingMeasurements } from "@/utils/measurement";
 import type { BabyProfile, Measurement } from "@/types";
+import { useAuthStore } from "@/store/auth-store";
 
 export function Dashboard() {
   const router = useRouter();
   const [baby, setBaby] = useState<BabyProfile | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  function handleLogout() {
+    clearAuth();
+    router.replace("/login");
+  }
 
   useEffect(() => {
     async function load() {
@@ -84,6 +91,14 @@ export function Dashboard() {
                 className="inline-flex items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/60"
               >
                 Record
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+              >
+                Logout
               </button>
             </div>
           </div>

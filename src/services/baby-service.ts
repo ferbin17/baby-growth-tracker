@@ -1,37 +1,29 @@
 import { supabase } from "@/lib/supabase";
-import type { BabyProfile, Measurement, Gender, MeasurementFrequency, SetupStage } from "@/types";
+import type { BabyProfile, Measurement } from "@/types";
+import type { BabyRow, MeasurementRow } from "@/types/database";
+import { useAuthStore } from "@/store/auth-store";
 
 type BabyProfileWrite = Partial<Omit<BabyProfile, "id" | "updatedAt">> & {
   id?: number;
 };
 
-type BabyRow = {
-  id: number;
-  name: string;
-  username?: string;
-  gender: Gender;
-  birth_date: string;
-  start_date?: string;
-  passcode: string;
-  birth_weight_kg: number;
-  birth_height_cm: number;
-  measurement_frequency: MeasurementFrequency;
-  stage?: SetupStage;
-  created_at: string;
-  updated_at: string;
-};
-
-type MeasurementRow = {
-  id: number;
-  baby_id: number;
-  date: string;
-  age_days: number;
-  weight_kg?: number;
-  height_cm?: number;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-};
+export function fromBabyRow(row: BabyRow): BabyProfile {
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    gender: row.gender,
+    birthDate: row.birth_date,
+    startDate: row.start_date,
+    passcode: row.passcode,
+    birthWeightKg: row.birth_weight_kg,
+    birthHeightCm: row.birth_height_cm,
+    measurementFrequency: row.measurement_frequency,
+    stage: row.stage,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 function toBabyRow(profile: Partial<BabyProfile>) {
   return {
@@ -66,24 +58,6 @@ function toBabyRow(profile: Partial<BabyProfile>) {
     ...(profile.updatedAt !== undefined && {
       updated_at: profile.updatedAt,
     }),
-  };
-}
-
-function fromBabyRow(row: BabyRow): BabyProfile {
-  return {
-    id: row.id,
-    name: row.name,
-    username: row.username,
-    gender: row.gender,
-    birthDate: row.birth_date,
-    startDate: row.start_date,
-    passcode: row.passcode,
-    birthWeightKg: row.birth_weight_kg,
-    birthHeightCm: row.birth_height_cm,
-    measurementFrequency: row.measurement_frequency,
-    stage: row.stage,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
   };
 }
 
@@ -194,16 +168,9 @@ export async function upsertBabyProfile(profile: BabyProfileWrite) {
 }
 
 export async function getBabyProfile() {
-  const { data, error } = await supabase
-    .from("babies")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const cachedBaby = useAuthStore.getState().baby;
 
-  if (error) throw error;
-
-  return data ? fromBabyRow(data as BabyRow) : null;
+  return cachedBaby;
 }
 
 export async function deleteMeasurementsForBaby(babyId: number) {

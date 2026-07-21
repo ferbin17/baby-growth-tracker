@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { deleteBabyProfile, getBabyProfile, updateBabyProfile } from "@/services/baby-service";
@@ -116,6 +116,14 @@ export default function ProfilePage() {
     <main className="flex h-full min-h-0 w-full overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col gap-6 overflow-y-auto">
         <div className="rounded-4xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/40">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to dashboard
+          </button>
           <div className="mb-8">
             <p className="text-sm uppercase tracking-[0.32em] text-slate-400">Profile</p>
             <h1 className="mt-3 text-4xl font-semibold text-slate-900">Baby profile</h1>
