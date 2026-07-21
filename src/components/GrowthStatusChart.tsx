@@ -17,15 +17,7 @@ import { format } from "date-fns";
 import { loadWhoData, interpolateWhoPoint, type WhoPoint } from "@/utils/who";
 import type { BabyProfile, Measurement } from "@/types";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface GrowthStatusChartProps {
   baby: BabyProfile;
@@ -53,66 +45,40 @@ export function GrowthStatusChart({
   }, [baby.gender, metric]);
 
   const sortedMeasurements = useMemo(
-    () =>
-      [...measurements].sort(
-        (a, b) =>
-          new Date(a.date).getTime() -
-          new Date(b.date).getTime()
-      ),
-    [measurements]
+    () => [...measurements].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [measurements],
   );
 
   const labels = useMemo(
-    () =>
-      sortedMeasurements.map((measurement) =>
-        format(new Date(measurement.date), "MMM d")
-      ),
-    [sortedMeasurements]
+    () => sortedMeasurements.map((measurement) => format(new Date(measurement.date), "MMM d")),
+    [sortedMeasurements],
   );
 
   const data = useMemo(() => {
     const actualValues = sortedMeasurements.map((measurement) => {
       if (metric === "weight") {
-        return measurement.weightKg == null
-          ? null
-          : Number(measurement.weightKg.toFixed(3));
+        return measurement.weightKg == null ? null : Number(measurement.weightKg.toFixed(3));
       }
 
-      return measurement.heightCm == null
-        ? null
-        : Number(measurement.heightCm.toFixed(1));
+      return measurement.heightCm == null ? null : Number(measurement.heightCm.toFixed(1));
     });
-
 
     const whoMedianValues = sortedMeasurements.map((measurement) => {
       if (!whoSeries.length) return null;
 
-      const point = interpolateWhoPoint(
-        whoSeries,
-        measurement.ageDays
-      );
+      const point = interpolateWhoPoint(whoSeries, measurement.ageDays);
 
       return Number(point.median.toFixed(1));
     });
-
 
     return {
       labels,
       datasets: [
         {
-          label:
-            metric === "weight"
-              ? "Baby Weight (kg)"
-              : "Baby Height (cm)",
+          label: metric === "weight" ? "Baby Weight (kg)" : "Baby Height (cm)",
           data: actualValues,
-          borderColor:
-            metric === "weight"
-              ? "#2563eb"
-              : "#0f766e",
-          backgroundColor:
-            metric === "weight"
-              ? "#2563eb"
-              : "#0f766e",
+          borderColor: metric === "weight" ? "#2563eb" : "#0f766e",
+          backgroundColor: metric === "weight" ? "#2563eb" : "#0f766e",
           tension: 0.25,
           fill: false,
           pointRadius: 4,
@@ -132,7 +98,6 @@ export function GrowthStatusChart({
       ],
     };
   }, [labels, metric, sortedMeasurements, whoSeries]);
-
 
   const options = useMemo(
     () => ({
@@ -169,22 +134,18 @@ export function GrowthStatusChart({
         },
       },
     }),
-    []
+    [],
   );
-
 
   const wrapperClass = noWrapper
     ? `mt-6 ${className}`
     : `mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm ${className}`;
 
-
   return (
     <div className={wrapperClass}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-slate-500">
-            Growth chart
-          </p>
+          <p className="text-sm font-medium text-slate-500">Growth chart</p>
           <p className="text-lg font-semibold text-slate-900">
             {metric === "weight" ? "Weight" : "Height"} over time
           </p>

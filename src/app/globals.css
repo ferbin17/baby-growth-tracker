@@ -16,13 +16,23 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
+  height: 100%;
+  min-height: 100dvh;
   margin: 0;
+  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-input, select, button {
+input,
+select,
+button {
   font: inherit;
 }

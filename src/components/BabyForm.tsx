@@ -4,7 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { resetMeasurementsForBaby, updateBabyProfile, upsertBabyProfile, createMeasurementsForBaby, getMeasurements } from "@/services/baby-service";
+import {
+  resetMeasurementsForBaby,
+  updateBabyProfile,
+  upsertBabyProfile,
+  createMeasurementsForBaby,
+  getMeasurements,
+} from "@/services/baby-service";
 import type { BabyProfile, Gender, MeasurementFrequency, SetupStage } from "@/types";
 
 interface BabyFormValues {
@@ -26,29 +32,36 @@ interface BabyFormProps {
   editOnlyMode?: boolean;
 }
 
-const schema = z.object({
-  name: z.string().min(1, "Baby name is required"),
-  username: z.string().optional(),
-  gender: z.enum(["male", "female"]),
-  birthDate: z.string().refine((value) => new Date(value) <= new Date(), {
-    message: "Birth date cannot be in the future",
-  }),
-  startDate: z.string().optional(),
-  passcode: z.string().regex(/^\d{4}$/, "Passcode must be 4 digits"),
-  birthWeightKg: z.coerce.number().positive("Weight must be greater than 0"),
-  birthHeightCm: z.coerce.number().positive("Height must be greater than 0"),
-  measurementFrequency: z.enum(["weekly", "biweekly", "monthly"]),
-}).superRefine((data, ctx) => {
-  if (data.startDate && new Date(data.startDate) < new Date(data.birthDate)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Start date cannot be before birth date",
-      path: ["startDate"],
-    });
-  }
-});
+const schema = z
+  .object({
+    name: z.string().min(1, "Baby name is required"),
+    username: z.string().optional(),
+    gender: z.enum(["male", "female"]),
+    birthDate: z.string().refine((value) => new Date(value) <= new Date(), {
+      message: "Birth date cannot be in the future",
+    }),
+    startDate: z.string().optional(),
+    passcode: z.string().regex(/^\d{4}$/, "Passcode must be 4 digits"),
+    birthWeightKg: z.coerce.number().positive("Weight must be greater than 0"),
+    birthHeightCm: z.coerce.number().positive("Height must be greater than 0"),
+    measurementFrequency: z.enum(["weekly", "biweekly", "monthly"]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startDate && new Date(data.startDate) < new Date(data.birthDate)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Start date cannot be before birth date",
+        path: ["startDate"],
+      });
+    }
+  });
 
-export function BabyForm({ existingProfile, currentStep, setStep, editOnlyMode = false }: BabyFormProps) {
+export function BabyForm({
+  existingProfile,
+  currentStep,
+  setStep,
+  editOnlyMode = false,
+}: BabyFormProps) {
   const router = useRouter();
   const [profileId, setProfileId] = useState<number | undefined>(existingProfile?.id);
   const activeStep = editOnlyMode ? 1 : currentStep;
@@ -64,36 +77,36 @@ export function BabyForm({ existingProfile, currentStep, setStep, editOnlyMode =
       birthHeightCm: existingProfile?.birthHeightCm ?? 0,
       measurementFrequency: existingProfile?.measurementFrequency ?? "weekly",
     }),
-    [existingProfile]
+    [existingProfile],
   );
 
-const {
-  register,
-  handleSubmit,
-  reset,
-  setError,
-  control,
-  setValue,
-  formState: { errors, isSubmitting },
-} = useForm<BabyFormValues>({
-  defaultValues: initialValues,
-});
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    control,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<BabyFormValues>({
+    defaultValues: initialValues,
+  });
 
   useEffect(() => {
     reset(initialValues);
   }, [initialValues, reset]);
 
-const previousAutoStartDate = useRef("");
+  const previousAutoStartDate = useRef("");
 
-const birthDateValue = useWatch({
-  control,
-  name: "birthDate",
-});
+  const birthDateValue = useWatch({
+    control,
+    name: "birthDate",
+  });
 
-const startDateValue = useWatch({
-  control,
-  name: "startDate",
-});
+  const startDateValue = useWatch({
+    control,
+    name: "startDate",
+  });
 
   useEffect(() => {
     if (!birthDateValue) {
@@ -131,21 +144,23 @@ const startDateValue = useWatch({
       birthWeightKg: z.coerce.number().positive("Weight must be greater than 0"),
       birthHeightCm: z.coerce.number().positive("Height must be greater than 0"),
     }),
-    z.object({
-      measurementFrequency: z.enum(["weekly", "biweekly", "monthly"]),
-      startDate: z.string().optional(),
-      birthDate: z.string().refine((value) => new Date(value) <= new Date(), {
-        message: "Birth date cannot be in the future",
+    z
+      .object({
+        measurementFrequency: z.enum(["weekly", "biweekly", "monthly"]),
+        startDate: z.string().optional(),
+        birthDate: z.string().refine((value) => new Date(value) <= new Date(), {
+          message: "Birth date cannot be in the future",
+        }),
+      })
+      .superRefine((data, ctx) => {
+        if (data.startDate && new Date(data.startDate) < new Date(data.birthDate)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Start date cannot be before birth date",
+            path: ["startDate"],
+          });
+        }
       }),
-    }).superRefine((data, ctx) => {
-      if (data.startDate && new Date(data.startDate) < new Date(data.birthDate)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Start date cannot be before birth date",
-          path: ["startDate"],
-        });
-      }
-    }),
     z.object({
       username: z.string().optional(),
       passcode: z.string().regex(/^[0-9]{4}$/, "Passcode must be 4 digits"),
@@ -166,14 +181,20 @@ const startDateValue = useWatch({
   };
 
   async function saveDraft(values: BabyFormValues, stage?: SetupStage) {
-    const draft: Partial<Omit<BabyProfile, "id" | "createdAt" | "updatedAt">> & { id?: number; stage?: SetupStage } = {
+    const draft: Partial<Omit<BabyProfile, "id" | "createdAt" | "updatedAt">> & {
+      id?: number;
+      stage?: SetupStage;
+    } = {
       id: profileId,
       name: values.name,
       gender: values.gender,
       birthDate: values.birthDate,
       birthWeightKg: values.birthWeightKg,
       birthHeightCm: values.birthHeightCm,
-      stage: clampStage(existingProfile?.stage, stage ?? (editOnlyMode ? "measure" : stageForStep(activeStep))),
+      stage: clampStage(
+        existingProfile?.stage,
+        stage ?? (editOnlyMode ? "measure" : stageForStep(activeStep)),
+      ),
     };
 
     if (activeStep >= 1) {
@@ -211,10 +232,10 @@ const startDateValue = useWatch({
     }
 
     const currentStage = editOnlyMode
-      ? existingProfile?.stage ?? "measure"
+      ? (existingProfile?.stage ?? "measure")
       : activeStep < stepSchemas.length - 1
         ? stageForStep(activeStep + 1)
-        : "measure" as SetupStage;
+        : ("measure" as SetupStage);
     const savedId = await saveDraft(values, currentStage);
 
     if (activeStep < stepSchemas.length - 1) {
@@ -224,7 +245,7 @@ const startDateValue = useWatch({
           existingProfile &&
           (existingProfile.measurementFrequency !== values.measurementFrequency ||
             existingProfile.startDate !== values.startDate ||
-            existingProfile.birthDate !== values.birthDate)
+            existingProfile.birthDate !== values.birthDate),
         );
 
         const profileData = {
@@ -292,19 +313,28 @@ const startDateValue = useWatch({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"
+    >
       <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
         {activeStep === 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Baby name</span>
-              <input {...register("name")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
+              <input
+                {...register("name")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
               {errors.name ? <p className="text-sm text-rose-600">{errors.name.message}</p> : null}
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Gender</span>
-              <select {...register("gender")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
+              <select
+                {...register("gender")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              >
                 <option value="female">Female</option>
                 <option value="male">Male</option>
               </select>
@@ -312,27 +342,50 @@ const startDateValue = useWatch({
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Birth date</span>
-              <input type="date" {...register("birthDate")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
-              {errors.birthDate ? <p className="text-sm text-rose-600">{errors.birthDate.message}</p> : null}
+              <input
+                type="date"
+                {...register("birthDate")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
+              {errors.birthDate ? (
+                <p className="text-sm text-rose-600">{errors.birthDate.message}</p>
+              ) : null}
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Birth weight (kg)</span>
-              <input type="number" step="0.01" {...register("birthWeightKg")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
-              {errors.birthWeightKg ? <p className="text-sm text-rose-600">{errors.birthWeightKg.message}</p> : null}
+              <input
+                type="number"
+                step="0.01"
+                {...register("birthWeightKg")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
+              {errors.birthWeightKg ? (
+                <p className="text-sm text-rose-600">{errors.birthWeightKg.message}</p>
+              ) : null}
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Birth height (cm)</span>
-              <input type="number" step="0.1" {...register("birthHeightCm")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
-              {errors.birthHeightCm ? <p className="text-sm text-rose-600">{errors.birthHeightCm.message}</p> : null}
+              <input
+                type="number"
+                step="0.1"
+                {...register("birthHeightCm")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
+              {errors.birthHeightCm ? (
+                <p className="text-sm text-rose-600">{errors.birthHeightCm.message}</p>
+              ) : null}
             </label>
           </div>
         ) : activeStep === 1 ? (
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-slate-700">
               <span>Measurement frequency</span>
-              <select {...register("measurementFrequency")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100">
+              <select
+                {...register("measurementFrequency")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              >
                 <option value="weekly">Weekly</option>
                 <option value="biweekly">Every 2 Weeks</option>
                 <option value="monthly">Monthly</option>
@@ -340,17 +393,33 @@ const startDateValue = useWatch({
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
-              <span>Start date <span className="text-xs font-normal text-slate-400">(optional)</span></span>
-              <input type="date" {...register("startDate")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
-              {errors.startDate ? <p className="text-sm text-rose-600">{errors.startDate.message}</p> : null}
+              <span>
+                Start date <span className="text-xs font-normal text-slate-400">(optional)</span>
+              </span>
+              <input
+                type="date"
+                {...register("startDate")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
+              {errors.startDate ? (
+                <p className="text-sm text-rose-600">{errors.startDate.message}</p>
+              ) : null}
             </label>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-slate-700">
-              <span>Username <span className="text-xs font-normal text-slate-400">(optional)</span></span>
-              <input {...register("username")} className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" placeholder="Nickname or handle" />
-              {errors.username ? <p className="text-sm text-rose-600">{errors.username.message}</p> : null}
+              <span>
+                Username <span className="text-xs font-normal text-slate-400">(optional)</span>
+              </span>
+              <input
+                {...register("username")}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                placeholder="Nickname or handle"
+              />
+              {errors.username ? (
+                <p className="text-sm text-rose-600">{errors.username.message}</p>
+              ) : null}
             </label>
 
             <label className="space-y-2 text-sm font-medium text-slate-700">
@@ -363,7 +432,9 @@ const startDateValue = useWatch({
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 placeholder="0000"
               />
-              {errors.passcode ? <p className="text-sm text-rose-600">{errors.passcode.message}</p> : null}
+              {errors.passcode ? (
+                <p className="text-sm text-rose-600">{errors.passcode.message}</p>
+              ) : null}
             </label>
           </div>
         )}
@@ -383,7 +454,15 @@ const startDateValue = useWatch({
           disabled={isSubmitting}
           className="inline-flex items-center justify-center rounded-2xl bg-sky-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          {editOnlyMode ? (isSubmitting ? "Saving..." : "Save changes") : activeStep < stepTitles.length - 1 ? "Next" : isSubmitting ? "Saving..." : "Finish setup"}
+          {editOnlyMode
+            ? isSubmitting
+              ? "Saving..."
+              : "Save changes"
+            : activeStep < stepTitles.length - 1
+              ? "Next"
+              : isSubmitting
+                ? "Saving..."
+                : "Finish setup"}
         </button>
       </div>
     </form>

@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMeasurements, upsertMeasurement, deleteMeasurement, updateBabyProfile } from "@/services/baby-service";
+import {
+  getMeasurements,
+  upsertMeasurement,
+  deleteMeasurement,
+  updateBabyProfile,
+} from "@/services/baby-service";
 import { formatDisplayDate, formatAgeFromDays } from "@/utils/age";
 import { formatWeight, formatHeight } from "@/utils/format";
 import type { Measurement } from "@/types";
@@ -14,16 +19,22 @@ interface MeasurementTableProps {
 export function MeasurementTable({ babyId }: MeasurementTableProps) {
   const router = useRouter();
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
-  const [drafts, setDrafts] = useState<Record<number, { weightKg: string; heightCm: string; notes: string }>>({});
+  const [drafts, setDrafts] = useState<
+    Record<number, { weightKg: string; heightCm: string; notes: string }>
+  >({});
   const [isSaving, setIsSaving] = useState(false);
 
-  const isDoneReady = measurements.length > 0 && measurements.every((row) => row.weightKg != null && row.heightCm != null);
+  const isDoneReady =
+    measurements.length > 0 &&
+    measurements.every((row) => row.weightKg != null && row.heightCm != null);
 
   useEffect(() => {
     async function load() {
       const rows = await getMeasurements(babyId);
       setMeasurements(rows);
-      const initialDrafts = rows.reduce<Record<number, { weightKg: string; heightCm: string; notes: string }>>((acc, row) => {
+      const initialDrafts = rows.reduce<
+        Record<number, { weightKg: string; heightCm: string; notes: string }>
+      >((acc, row) => {
         if (row.id) {
           acc[row.id] = {
             weightKg: row.weightKg?.toString() ?? "",
@@ -39,7 +50,11 @@ export function MeasurementTable({ babyId }: MeasurementTableProps) {
     void load();
   }, [babyId]);
 
-  function handleDraftChange(id: number | undefined, field: "weightKg" | "heightCm" | "notes", value: string) {
+  function handleDraftChange(
+    id: number | undefined,
+    field: "weightKg" | "heightCm" | "notes",
+    value: string,
+  ) {
     if (!id) return;
     setDrafts((current) => ({
       ...current,
@@ -121,7 +136,9 @@ export function MeasurementTable({ babyId }: MeasurementTableProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">Measurements</h2>
-            <p className="text-sm text-slate-600">Update actual measurements and notes whenever you have a new check-in.</p>
+            <p className="text-sm text-slate-600">
+              Update actual measurements and notes whenever you have a new check-in.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -146,57 +163,67 @@ export function MeasurementTable({ babyId }: MeasurementTableProps) {
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
-            <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Age</th>
-              <th className="px-4 py-3">Weight (kg)</th>
-              <th className="px-4 py-3">Height (cm)</th>
-              <th className="px-4 py-3">Notes</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {measurements.map((measurement) => (
-              <tr key={measurement.id} className="border-t border-slate-100">
-                <td className="px-4 py-3">{formatDisplayDate(measurement.date)}</td>
-                <td className="px-4 py-3">{formatAgeFromDays(measurement.ageDays)}</td>
-                <td className="px-4 py-3">
-                          <input
-                      value={drafts[measurement.id ?? -1]?.weightKg ?? formatWeight(measurement.weightKg)}
+            <thead className="bg-slate-50 text-left text-slate-600">
+              <tr>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Age</th>
+                <th className="px-4 py-3">Weight (kg)</th>
+                <th className="px-4 py-3">Height (cm)</th>
+                <th className="px-4 py-3">Notes</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {measurements.map((measurement) => (
+                <tr key={measurement.id} className="border-t border-slate-100">
+                  <td className="px-4 py-3">{formatDisplayDate(measurement.date)}</td>
+                  <td className="px-4 py-3">{formatAgeFromDays(measurement.ageDays)}</td>
+                  <td className="px-4 py-3">
+                    <input
+                      value={
+                        drafts[measurement.id ?? -1]?.weightKg ?? formatWeight(measurement.weightKg)
+                      }
                       type="number"
                       step="0.001"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                      onChange={(event) => handleDraftChange(measurement.id, "weightKg", event.target.value)}
+                      onChange={(event) =>
+                        handleDraftChange(measurement.id, "weightKg", event.target.value)
+                      }
                     />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    value={drafts[measurement.id ?? -1]?.heightCm ?? formatHeight(measurement.heightCm)}
-                    type="number"
-                    step="0.1"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                    onChange={(event) => handleDraftChange(measurement.id, "heightCm", event.target.value)}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    value={drafts[measurement.id ?? -1]?.notes ?? measurement.notes ?? ""}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                    onChange={(event) => handleDraftChange(measurement.id, "notes", event.target.value)}
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => handleClear(measurement.id)}
-                    className="text-sm text-rose-600"
-                  >
-                    Clear
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      value={
+                        drafts[measurement.id ?? -1]?.heightCm ?? formatHeight(measurement.heightCm)
+                      }
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                      onChange={(event) =>
+                        handleDraftChange(measurement.id, "heightCm", event.target.value)
+                      }
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      value={drafts[measurement.id ?? -1]?.notes ?? measurement.notes ?? ""}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                      onChange={(event) =>
+                        handleDraftChange(measurement.id, "notes", event.target.value)
+                      }
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleClear(measurement.id)}
+                      className="text-sm text-rose-600"
+                    >
+                      Clear
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>

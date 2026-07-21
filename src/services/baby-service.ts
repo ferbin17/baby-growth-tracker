@@ -1,11 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type {
-  BabyProfile,
-  Measurement,
-  Gender,
-  MeasurementFrequency,
-  SetupStage,
-} from "@/types";
+import type { BabyProfile, Measurement, Gender, MeasurementFrequency, SetupStage } from "@/types";
 
 type BabyProfileWrite = Partial<Omit<BabyProfile, "id" | "updatedAt">> & {
   id?: number;
@@ -140,7 +134,7 @@ function fromMeasurementRow(row: MeasurementRow): Measurement {
 }
 
 export async function saveBabyProfile(
-  profile: Omit<BabyProfile, "id" | "createdAt" | "updatedAt">
+  profile: Omit<BabyProfile, "id" | "createdAt" | "updatedAt">,
 ) {
   const now = new Date().toISOString();
 
@@ -151,7 +145,7 @@ export async function saveBabyProfile(
         ...profile,
         createdAt: now,
         updatedAt: now,
-      })
+      }),
     )
     .select("id")
     .single();
@@ -161,17 +155,14 @@ export async function saveBabyProfile(
   return data.id;
 }
 
-export async function updateBabyProfile(
-  id: number,
-  profile: BabyProfileWrite
-) {
+export async function updateBabyProfile(id: number, profile: BabyProfileWrite) {
   const { error } = await supabase
     .from("babies")
     .update(
       toBabyRow({
         ...profile,
         updatedAt: new Date().toISOString(),
-      })
+      }),
     )
     .eq("id", id);
 
@@ -188,21 +179,14 @@ export async function upsertBabyProfile(profile: BabyProfileWrite) {
   });
 
   if (profile.id) {
-    const { error } = await supabase
-      .from("babies")
-      .update(payload)
-      .eq("id", profile.id);
+    const { error } = await supabase.from("babies").update(payload).eq("id", profile.id);
 
     if (error) throw error;
 
     return profile.id;
   }
 
-  const { data, error } = await supabase
-    .from("babies")
-    .insert(payload)
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("babies").insert(payload).select("id").single();
 
   if (error) throw error;
 
@@ -223,10 +207,7 @@ export async function getBabyProfile() {
 }
 
 export async function deleteMeasurementsForBaby(babyId: number) {
-  const { error } = await supabase
-    .from("measurements")
-    .delete()
-    .eq("baby_id", babyId);
+  const { error } = await supabase.from("measurements").delete().eq("baby_id", babyId);
 
   if (error) throw error;
 }
@@ -234,33 +215,23 @@ export async function deleteMeasurementsForBaby(babyId: number) {
 export async function deleteBabyProfile(id: number) {
   await deleteMeasurementsForBaby(id);
 
-  const { error } = await supabase
-    .from("babies")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("babies").delete().eq("id", id);
 
   if (error) throw error;
 }
 
-export async function createMeasurementsForBaby(
-  babyId: number,
-  baby: BabyProfile
-) {
+export async function createMeasurementsForBaby(babyId: number, baby: BabyProfile) {
   const measurements: Partial<Measurement>[] = [];
 
   const today = new Date();
   const birthDate = new Date(baby.birthDate);
 
-  const currentDate = new Date(
-    baby.startDate ? baby.startDate : birthDate
-  );
+  const currentDate = new Date(baby.startDate ? baby.startDate : birthDate);
 
   let index = 0;
 
   while (currentDate <= today) {
-    const ageDays = Math.round(
-      (currentDate.getTime() - birthDate.getTime()) / 86400000
-    );
+    const ageDays = Math.round((currentDate.getTime() - birthDate.getTime()) / 86400000);
 
     const now = new Date().toISOString();
 
@@ -276,12 +247,10 @@ export async function createMeasurementsForBaby(
       baby.measurementFrequency === "monthly"
         ? 30
         : baby.measurementFrequency === "biweekly"
-        ? 14
-        : 7;
+          ? 14
+          : 7;
 
-    currentDate.setDate(
-      currentDate.getDate() + incrementDays
-    );
+    currentDate.setDate(currentDate.getDate() + incrementDays);
 
     index++;
 
@@ -294,23 +263,15 @@ export async function createMeasurementsForBaby(
     return;
   }
 
-  const { error } = await supabase
-    .from("measurements")
-    .insert(measurements.map(toMeasurementRow));
+  const { error } = await supabase.from("measurements").insert(measurements.map(toMeasurementRow));
 
   if (error) throw error;
 }
 
-export async function resetMeasurementsForBaby(
-  babyId: number,
-  baby: BabyProfile
-) {
+export async function resetMeasurementsForBaby(babyId: number, baby: BabyProfile) {
   await deleteMeasurementsForBaby(babyId);
 
-  await createMeasurementsForBaby(
-    babyId,
-    baby
-  );
+  await createMeasurementsForBaby(babyId, baby);
 }
 
 export async function getMeasurements(babyId: number) {
@@ -322,14 +283,10 @@ export async function getMeasurements(babyId: number) {
 
   if (error) throw error;
 
-  return (data as MeasurementRow[]).map(
-    fromMeasurementRow
-  );
+  return (data as MeasurementRow[]).map(fromMeasurementRow);
 }
 
-export async function upsertMeasurement(
-  measurement: Measurement
-) {
+export async function upsertMeasurement(measurement: Measurement) {
   const now = new Date().toISOString();
 
   const payload = toMeasurementRow({
@@ -338,11 +295,7 @@ export async function upsertMeasurement(
     updatedAt: now,
   });
 
-  const { data, error } = await supabase
-    .from("measurements")
-    .upsert(payload)
-    .select("id")
-    .single();
+  const { data, error } = await supabase.from("measurements").upsert(payload).select("id").single();
 
   if (error) throw error;
 
@@ -350,22 +303,16 @@ export async function upsertMeasurement(
 }
 
 export async function deleteMeasurement(id: number) {
-  const { error } = await supabase
-    .from("measurements")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("measurements").delete().eq("id", id);
 
   if (error) throw error;
 }
 
 /** Insert any missing frequency-date rows up to today, plus the next upcoming slot. */
-export async function ensureMeasurementsForBaby(
-  babyId: number,
-  baby: BabyProfile
-) {
+export async function ensureMeasurementsForBaby(babyId: number, baby: BabyProfile) {
   const existing = await getMeasurements(babyId);
   const existingKeys = new Set(
-    existing.map((row) => new Date(row.date).toISOString().slice(0, 10))
+    existing.map((row) => new Date(row.date).toISOString().slice(0, 10)),
   );
 
   const today = new Date();
@@ -393,9 +340,7 @@ export async function ensureMeasurementsForBaby(
       missing.push({
         babyId,
         date: currentDate.toISOString(),
-        ageDays: Math.round(
-          (currentDate.getTime() - birthDate.getTime()) / 86400000
-        ),
+        ageDays: Math.round((currentDate.getTime() - birthDate.getTime()) / 86400000),
         createdAt: now,
         updatedAt: now,
       });
@@ -414,18 +359,14 @@ export async function ensureMeasurementsForBaby(
     return existing;
   }
 
-  const { error } = await supabase
-    .from("measurements")
-    .insert(missing.map(toMeasurementRow));
+  const { error } = await supabase.from("measurements").insert(missing.map(toMeasurementRow));
 
   if (error) throw error;
 
   return getMeasurements(babyId);
 }
 
-export async function getLatestCompletedMeasurement(
-  babyId: number
-) {
+export async function getLatestCompletedMeasurement(babyId: number) {
   const today = new Date().toISOString().slice(0, 10);
 
   const { data, error } = await supabase
@@ -440,7 +381,5 @@ export async function getLatestCompletedMeasurement(
 
   if (error) throw error;
 
-  return data
-    ? fromMeasurementRow(data as MeasurementRow)
-    : null;
+  return data ? fromMeasurementRow(data as MeasurementRow) : null;
 }
