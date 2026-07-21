@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BabyForm } from "@/components/BabyForm";
 import { getBabyProfile } from "@/services/baby-service";
+import { useAuthStore } from "@/store/auth-store";
+import { PageLoader } from "@/components/ui/PageLoader";
 import type { BabyProfile } from "@/types";
 
 function getCurrentStepFromProfile(profile: BabyProfile | null | undefined) {
@@ -82,6 +84,7 @@ export default function SetupPageClient() {
   const [loaded, setLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [editOnlyMode, setEditOnlyMode] = useState(false);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   const effectiveStep = editOnlyMode ? 1 : currentStep;
 
@@ -107,6 +110,8 @@ export default function SetupPageClient() {
 
   useEffect(() => {
     async function load() {
+      if (!hasHydrated) return;
+
       const profile = await getBabyProfile();
       const requestedStage = stageParam === "measurement";
       const profileValue = profile ?? null;
@@ -135,10 +140,10 @@ export default function SetupPageClient() {
     }
 
     void load();
-  }, [router, stageParam]);
+  }, [hasHydrated, router, stageParam]);
 
-  if (!loaded) {
-    return null;
+  if (!hasHydrated || !loaded) {
+    return <PageLoader label="Loading setup…" />;
   }
 
   return (

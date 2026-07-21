@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { login } from "@/services/auth-service";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/auth-store";
 
 interface LoginValues {
   username: string;
@@ -16,7 +15,6 @@ interface LoginValues {
 export function LoginForm() {
   const router = useRouter();
   const [showPasscode, setShowPasscode] = useState(false);
-  const setBaby = useAuthStore((state) => state.setBaby);
 
   const {
     register,
@@ -37,7 +35,6 @@ export function LoginForm() {
       return;
     }
 
-    setBaby(result.baby);
     toast.success("Welcome back!");
     router.push("/");
   }

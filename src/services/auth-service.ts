@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { fromBabyRow } from "@/services/baby-service";
+import { useAuthStore } from "@/store/auth-store";
 import type { BabyProfile } from "@/types";
 import type { BabyRow } from "@/types/database";
 
@@ -37,8 +38,12 @@ export async function login(username: string, passcode: string): Promise<LoginRe
     };
   }
 
+  const baby = fromBabyRow(data as BabyRow);
+
+  useAuthStore.getState().setBaby(baby);
+
   return {
     success: true,
-    baby: fromBabyRow(data as BabyRow),
+    baby,
   };
 }

@@ -11,6 +11,7 @@ import {
 import { hasPendingMeasurements } from "@/utils/measurement";
 import type { BabyProfile, Measurement } from "@/types";
 import { useAuthStore } from "@/store/auth-store";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export function Dashboard() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export function Dashboard() {
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   function handleLogout() {
     clearAuth();
@@ -26,6 +28,8 @@ export function Dashboard() {
 
   useEffect(() => {
     async function load() {
+      if (!hasHydrated) return;
+
       const profile = await getBabyProfile();
 
       if (!profile) {
@@ -50,10 +54,10 @@ export function Dashboard() {
     }
 
     void load();
-  }, [router]);
+  }, [hasHydrated, router]);
 
-  if (!isLoaded || !baby) {
-    return null;
+  if (!hasHydrated || !isLoaded || !baby) {
+    return <PageLoader label="Loading dashboard…" />;
   }
 
   const canRecord = hasPendingMeasurements(measurements);

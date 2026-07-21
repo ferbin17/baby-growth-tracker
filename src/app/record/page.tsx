@@ -6,14 +6,19 @@ import { ensureMeasurementsForBaby, getBabyProfile } from "@/services/baby-servi
 import { RecordForm } from "@/components/RecordForm";
 import { frequencyLabel, hasPendingMeasurements } from "@/utils/measurement";
 import type { BabyProfile } from "@/types";
+import { useAuthStore } from "@/store/auth-store";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function RecordPage() {
   const router = useRouter();
   const [baby, setBaby] = useState<BabyProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     async function load() {
+      if (!hasHydrated) return;
+
       const profile = await getBabyProfile();
       if (!profile) {
         router.replace("/setup");
@@ -42,10 +47,10 @@ export default function RecordPage() {
     }
 
     void load();
-  }, [router]);
+  }, [hasHydrated, router]);
 
-  if (!isReady || !baby) {
-    return null;
+  if (!hasHydrated || !isReady || !baby) {
+    return <PageLoader label="Loading check-in…" />;
   }
 
   return (

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "sonner";
+import { AuthStoreHydrator } from "@/components/AuthStoreHydrator";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.35),transparent_45%),linear-gradient(135deg,#f8fbff_0%,#fdfefe_100%)] text-slate-900">
+        <AuthStoreHydrator />
         {children}
         <Toaster position="top-right" richColors closeButton />
         <SpeedInsights />

@@ -4,19 +4,21 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { LoginForm } from "@/components/LoginForm";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function LoginPage() {
   const router = useRouter();
   const baby = useAuthStore((state) => state.baby);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
-    if (baby) {
+    if (hasHydrated && baby) {
       router.replace("/");
     }
-  }, [baby, router]);
+  }, [baby, hasHydrated, router]);
 
-  if (baby) {
-    return null;
+  if (!hasHydrated || baby) {
+    return <PageLoader label="Loading sign in…" />;
   }
 
   return (

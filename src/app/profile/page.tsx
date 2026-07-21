@@ -6,6 +6,8 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { deleteBabyProfile, getBabyProfile, updateBabyProfile } from "@/services/baby-service";
 import type { BabyProfile } from "@/types";
 
@@ -22,6 +24,7 @@ export default function ProfilePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   const {
     register,
@@ -38,6 +41,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function load() {
+      if (!hasHydrated) return;
+
       const existingProfile = await getBabyProfile();
       if (!existingProfile) {
         router.replace("/setup");
@@ -53,7 +58,7 @@ export default function ProfilePage() {
     }
 
     void load();
-  }, [router, reset]);
+  }, [hasHydrated, router, reset]);
 
   const readOnlyFields = useMemo(
     () => [
@@ -117,8 +122,8 @@ export default function ProfilePage() {
     }
   }
 
-  if (!isLoaded) {
-    return null;
+  if (!hasHydrated || !isLoaded) {
+    return <PageLoader label="Loading profile…" />;
   }
 
   return (

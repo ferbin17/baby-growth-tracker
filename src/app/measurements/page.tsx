@@ -6,14 +6,19 @@ import { getBabyProfile, getMeasurements, updateBabyProfile } from "@/services/b
 import { hasPendingMeasurements } from "@/utils/measurement";
 import { MeasurementTable } from "@/components/MeasurementTable";
 import type { BabyProfile } from "@/types";
+import { useAuthStore } from "@/store/auth-store";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function MeasurementsPage() {
   const router = useRouter();
   const [baby, setBaby] = useState<BabyProfile | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     async function load() {
+      if (!hasHydrated) return;
+
       const profile = await getBabyProfile();
       if (!profile) {
         router.replace("/setup");
@@ -37,10 +42,10 @@ export default function MeasurementsPage() {
     }
 
     void load();
-  }, [router]);
+  }, [hasHydrated, router]);
 
-  if (!isReady || !baby) {
-    return null;
+  if (!hasHydrated || !isReady || !baby) {
+    return <PageLoader label="Loading measurements…" />;
   }
 
   return (

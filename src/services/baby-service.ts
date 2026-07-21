@@ -107,28 +107,6 @@ function fromMeasurementRow(row: MeasurementRow): Measurement {
   };
 }
 
-export async function saveBabyProfile(
-  profile: Omit<BabyProfile, "id" | "createdAt" | "updatedAt">,
-) {
-  const now = new Date().toISOString();
-
-  const { data, error } = await supabase
-    .from("babies")
-    .insert(
-      toBabyRow({
-        ...profile,
-        createdAt: now,
-        updatedAt: now,
-      }),
-    )
-    .select("id")
-    .single();
-
-  if (error) throw error;
-
-  return data.id;
-}
-
 export async function updateBabyProfile(id: number, profile: BabyProfileWrite) {
   const { data, error } = await supabase
     .from("babies")
@@ -161,18 +139,33 @@ export async function upsertBabyProfile(profile: BabyProfileWrite) {
   });
 
   if (profile.id) {
-    const { error } = await supabase.from("babies").update(payload).eq("id", profile.id);
+    const { data, error } = await supabase
+      .from("babies")
+      .update(payload)
+      .eq("id", profile.id)
+      .select("*")
+      .single();
 
     if (error) throw error;
+
+    useAuthStore.getState().setBaby(fromBabyRow(data as BabyRow));
 
     return profile.id;
   }
 
-  const { data, error } = await supabase.from("babies").insert(payload).select("id").single();
+  const { data, error } = await supabase.from("babies").insert(payload).select("*").single();
 
   if (error) throw error;
 
-  return data.id;
+  const savedBaby = fromBabyRow(data as BabyRow);
+
+  if (savedBaby.id == null) {
+    throw new Error("Baby profile was saved without an ID");
+  }
+
+  useAuthStore.getState().setBaby(savedBaby);
+
+  return savedBaby.id;
 }
 
 export async function getBabyProfile() {
@@ -193,6 +186,8 @@ export async function deleteBabyProfile(id: number) {
   const { error } = await supabase.from("babies").delete().eq("id", id);
 
   if (error) throw error;
+
+  useAuthStore.getState().clearAuth();
 }
 
 export async function createMeasurementsForBaby(babyId: number, baby: BabyProfile) {
