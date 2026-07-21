@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardCards } from "@/components/DashboardCards";
-import { getBabyProfile, getMeasurements } from "@/services/baby-service";
+import {
+  ensureMeasurementsForBaby,
+  getBabyProfile,
+  getMeasurements,
+} from "@/services/baby-service";
 import { hasPendingMeasurements } from "@/utils/measurement";
 import type { BabyProfile, Measurement } from "@/types";
 
@@ -21,10 +25,15 @@ export function Dashboard() {
         return;
       }
 
-      const rows = await getMeasurements(profile.id!);
-      if (hasPendingMeasurements(rows)) {
+      let rows = await getMeasurements(profile.id!);
+      if (profile.stage !== "complete" && hasPendingMeasurements(rows)) {
         router.replace("/measurements");
         return;
+      }
+
+      // Keep frequency slots current so pending state is accurate for Record.
+      if (profile.stage === "complete") {
+        rows = await ensureMeasurementsForBaby(profile.id!, profile);
       }
 
       setBaby(profile);
@@ -38,6 +47,8 @@ export function Dashboard() {
   if (!isLoaded || !baby) {
     return null;
   }
+
+  const canRecord = hasPendingMeasurements(measurements);
 
   return (
     <main className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
@@ -58,9 +69,9 @@ export function Dashboard() {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/measurements")}
-              disabled={!hasPendingMeasurements(measurements)}
-              className="inline-flex items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/60 disabled:bg-white/5"
+              onClick={() => router.push("/record")}
+              disabled={!canRecord}
+              className="inline-flex items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/60"
             >
               Record
             </button>

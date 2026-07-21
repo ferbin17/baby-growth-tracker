@@ -357,3 +357,68 @@ export async function deleteMeasurement(id: number) {
 
   if (error) throw error;
 }
+
+/** Insert any missing frequency-date rows up to today, plus the next upcoming slot. */
+export async function ensureMeasurementsForBaby(
+  babyId: number,
+  baby: BabyProfile
+) {
+  const existing = await getMeasurements(babyId);
+  const existingKeys = new Set(
+    existing.map((row) => new Date(row.date).toISOString().slice(0, 10))
+  );
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const birthDate = new Date(baby.birthDate);
+  const currentDate = new Date(baby.startDate ? baby.startDate : birthDate);
+  const incrementDays =
+    baby.measurementFrequency === "monthly"
+      ? 30
+      : baby.measurementFrequency === "biweekly"
+        ? 14
+        : 7;
+
+  const missing: Partial<Measurement>[] = [];
+  const now = new Date().toISOString();
+  let index = 0;
+  let addedUpcoming = false;
+
+  while (index <= 500) {
+    const isPastOrToday = currentDate.getTime() <= today.getTime();
+    const dateKey = currentDate.toISOString().slice(0, 10);
+
+    if ((isPastOrToday || !addedUpcoming) && !existingKeys.has(dateKey)) {
+      missing.push({
+        babyId,
+        date: currentDate.toISOString(),
+        ageDays: Math.round(
+          (currentDate.getTime() - birthDate.getTime()) / 86400000
+        ),
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    if (!isPastOrToday) {
+      addedUpcoming = true;
+      break;
+    }
+
+    currentDate.setDate(currentDate.getDate() + incrementDays);
+    index++;
+  }
+
+  if (missing.length === 0) {
+    return existing;
+  }
+
+  const { error } = await supabase
+    .from("measurements")
+    .insert(missing.map(toMeasurementRow));
+
+  if (error) throw error;
+
+  return getMeasurements(babyId);
+}
