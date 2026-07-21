@@ -1,3 +1,5 @@
+import "client-only";
+
 import { supabase } from "@/lib/supabase";
 import type { BabyProfile, Measurement } from "@/types";
 import type { BabyRow, MeasurementRow } from "@/types/database";

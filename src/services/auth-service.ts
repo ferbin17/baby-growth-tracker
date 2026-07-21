@@ -1,3 +1,5 @@
+import "client-only";
+
 import { supabase } from "@/lib/supabase";
 import { fromBabyRow } from "@/services/baby-service";
 import { useAuthStore } from "@/store/auth-store";

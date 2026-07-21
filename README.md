@@ -33,9 +33,10 @@ npm run build
 
 ## Project structure
 
-- `src/app`: App Router routes, layouts, and route-level error handling
-- `src/components`: reusable client UI, including app-state hydration and loading primitives
-- `src/services`: Supabase-backed profile, measurement, and login operations
+- `src/app`: thin App Router routes, layouts, and route-level error handling
+- `src/features`: route-specific client components grouped by domain
+- `src/components`: reusable UI, including app-state hydration and loading primitives
+- `src/services`: browser-only Supabase-backed profile, measurement, and login operations
 - `src/store`: persisted client session state
 - `src/utils`: growth, date, formatting, and WHO-data calculations
 

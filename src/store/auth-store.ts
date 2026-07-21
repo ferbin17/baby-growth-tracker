@@ -1,3 +1,5 @@
+import "client-only";
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { BabyProfile } from "@/types";
