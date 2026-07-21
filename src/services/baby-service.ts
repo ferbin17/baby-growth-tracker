@@ -422,3 +422,25 @@ export async function ensureMeasurementsForBaby(
 
   return getMeasurements(babyId);
 }
+
+export async function getLatestCompletedMeasurement(
+  babyId: number
+) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("measurements")
+    .select("*")
+    .eq("baby_id", babyId)
+    .lte("date", today)
+    .or("weight_kg.not.is.null,height_cm.not.is.null")
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data
+    ? fromMeasurementRow(data as MeasurementRow)
+    : null;
+}

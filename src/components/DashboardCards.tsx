@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getBabyProfile, getMeasurements } from "@/services/baby-service";
+import {
+  getBabyProfile,
+  getLatestCompletedMeasurement,
+  getMeasurements,
+} from "@/services/baby-service";
 import { formatDisplayDate, getAgeLabel } from "@/utils/age";
-import { getGrowthStatus, getLatestMeasurement } from "@/utils/growth";
-import { formatWeightLabel, formatHeightLabel } from "@/utils/format";
+import { getGrowthStatus } from "@/utils/growth";
+import { formatHeightLabel, formatWeightLabel } from "@/utils/format";
 import { GrowthStatusChart } from "@/components/GrowthStatusChart";
 import {
   calculatePercentileFromMeasurement,
@@ -17,7 +21,10 @@ import { getNextUpcomingMeasurement } from "@/utils/measurement";
 
 export function DashboardCards() {
   const [baby, setBaby] = useState<BabyProfile | null>(null);
+  const [latest, setLatest] = useState<Measurement | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [nextMeasurement, setNextMeasurement] =
+    useState<Measurement | null>(null);
   const [whoWeight, setWhoWeight] = useState<WhoPoint[]>([]);
 
   useEffect(() => {
@@ -30,27 +37,30 @@ export function DashboardCards() {
 
       setBaby(profile);
 
-      const rows = await getMeasurements(profile.id!);
-      setMeasurements(rows);
+      const [latestRow, measurementRows, who] = await Promise.all([
+        getLatestCompletedMeasurement(profile.id!),
+        getMeasurements(profile.id!),
+        loadWhoData(profile.gender, "weight"),
+      ]);
 
-      const who = await loadWhoData(profile.gender, "weight");
+      setLatest(latestRow);
+      setMeasurements(measurementRows);
       setWhoWeight(who);
+
+      setNextMeasurement(
+        getNextUpcomingMeasurement(measurementRows)
+      );
     }
 
     void load();
   }, []);
 
-  const latest = useMemo(
-    () => getLatestMeasurement(measurements),
-    [measurements]
-  );
-  const nextMeasurement = useMemo(
-  () => getNextUpcomingMeasurement(measurements),
-  [measurements]
-);
-
   const latestWeightPercentile = useMemo(() => {
-    if (!latest || !latest.weightKg || whoWeight.length === 0) {
+    if (
+      !latest ||
+      latest.weightKg == null ||
+      whoWeight.length === 0
+    ) {
       return null;
     }
 
@@ -95,13 +105,13 @@ export function DashboardCards() {
       />
 
       <MetricCard
-  title="Next measurement"
-  value={
-    nextMeasurement
-      ? formatDisplayDate(new Date(nextMeasurement.date))
-      : "Completed"
-  }
-/>
+        title="Next measurement"
+        value={
+          nextMeasurement
+            ? formatDisplayDate(new Date(nextMeasurement.date))
+            : "Completed"
+        }
+      />
 
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2 xl:col-span-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
