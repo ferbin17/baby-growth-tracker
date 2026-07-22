@@ -15,12 +15,12 @@ import { Line } from "react-chartjs-2";
 import { format } from "date-fns";
 
 import { loadWhoData, interpolateWhoPoint, type WhoPoint } from "@/utils/who";
-import type { BabyProfile, Measurement } from "@/types";
+import type { AuthenticatedBaby, Measurement } from "@/types";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface GrowthStatusChartProps {
-  baby: BabyProfile;
+  baby: AuthenticatedBaby;
   measurements: Measurement[];
   noWrapper?: boolean;
   className?: string;

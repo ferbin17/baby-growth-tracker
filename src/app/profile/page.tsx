@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { deleteBabyProfile, getBabyProfile, updateBabyProfile } from "@/services/baby-service";
+import { deleteBabyProfile, getDBBabyProfile, updateBabyProfile } from "@/services/baby-service";
 import type { BabyProfile } from "@/types";
 
 const schema = z.object({
@@ -24,7 +24,7 @@ export default function ProfilePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const { baby: authBaby, hasHydrated } = useAuthStore();
 
   const {
     register,
@@ -43,22 +43,30 @@ export default function ProfilePage() {
     async function load() {
       if (!hasHydrated) return;
 
-      const existingProfile = await getBabyProfile();
+      if (!authBaby?.id) {
+        router.replace("/login");
+        return;
+      }
+
+      const existingProfile = await getDBBabyProfile(authBaby.id);
+
       if (!existingProfile) {
         router.replace("/setup");
         return;
       }
 
       setProfile(existingProfile);
+
       reset({
         username: existingProfile.username ?? "",
         passcode: existingProfile.passcode ?? "",
       });
+
       setIsLoaded(true);
     }
 
     void load();
-  }, [hasHydrated, router, reset]);
+  }, [authBaby, hasHydrated, router, reset]);
 
   const readOnlyFields = useMemo(
     () => [

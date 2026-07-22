@@ -2,24 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { DashboardCards } from "@/components/DashboardCards";
-import {
-  ensureMeasurementsForBaby,
-  getBabyProfile,
-  getMeasurements,
-} from "@/services/baby-service";
-import { hasPendingMeasurements } from "@/utils/measurement";
-import type { BabyProfile, Measurement } from "@/types";
-import { useAuthStore } from "@/store/auth-store";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { useAuthStore } from "@/store/auth-store";
+import { hasPendingMeasurements } from "@/utils/measurement";
+import { ensureMeasurementsForBaby, getMeasurements } from "@/services/baby-service";
+import type { Measurement } from "@/types";
 
 export function Dashboard() {
   const router = useRouter();
-  const [baby, setBaby] = useState<BabyProfile | null>(null);
+
+  const baby = useAuthStore((state) => state.baby);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   function handleLogout() {
     clearAuth();
@@ -30,31 +29,28 @@ export function Dashboard() {
     async function load() {
       if (!hasHydrated) return;
 
-      const profile = await getBabyProfile();
-
-      if (!profile) {
-        router.replace("/setup");
+      if (!baby) {
+        router.replace("/login");
         return;
       }
 
-      let rows = await getMeasurements(profile.id!);
+      let rows = await getMeasurements(baby.id!);
 
-      if (profile.stage !== "complete" && hasPendingMeasurements(rows)) {
+      if (baby.stage !== "complete" && hasPendingMeasurements(rows)) {
         router.replace("/measurements");
         return;
       }
 
-      if (profile.stage === "complete") {
-        rows = await ensureMeasurementsForBaby(profile.id!, profile);
+      if (baby.stage === "complete") {
+        rows = await ensureMeasurementsForBaby(baby.id!, baby);
       }
 
-      setBaby(profile);
       setMeasurements(rows);
       setIsLoaded(true);
     }
 
     void load();
-  }, [hasHydrated, router]);
+  }, [baby, hasHydrated, router]);
 
   if (!hasHydrated || !isLoaded || !baby) {
     return <PageLoader label="Loading dashboard…" />;

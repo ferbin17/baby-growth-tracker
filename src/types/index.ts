@@ -38,3 +38,5 @@ export interface AppSettings {
   createdAt: string;
   updatedAt: string;
 }
+
+export type AuthenticatedBaby = Omit<BabyProfile, "username" | "passcode">;

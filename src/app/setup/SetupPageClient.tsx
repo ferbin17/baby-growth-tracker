@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BabyForm } from "@/components/BabyForm";
-import { getBabyProfile } from "@/services/baby-service";
+import { getDBBabyProfile } from "@/services/baby-service";
 import { useAuthStore } from "@/store/auth-store";
 import { PageLoader } from "@/components/ui/PageLoader";
 import type { BabyProfile } from "@/types";
@@ -84,7 +84,7 @@ export default function SetupPageClient() {
   const [loaded, setLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [editOnlyMode, setEditOnlyMode] = useState(false);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const { baby: authBaby, hasHydrated } = useAuthStore();
 
   const effectiveStep = editOnlyMode ? 1 : currentStep;
 
@@ -112,9 +112,15 @@ export default function SetupPageClient() {
     async function load() {
       if (!hasHydrated) return;
 
-      const profile = await getBabyProfile();
+      let profile: BabyProfile | null = null;
+
+      if (authBaby?.id) {
+        profile = await getDBBabyProfile(authBaby.id);
+      }
+
       const requestedStage = stageParam === "measurement";
-      const profileValue = profile ?? null;
+      const profileValue = profile;
+
       const allowMeasurementEdit =
         requestedStage && profileValue !== null && profileValue.stage !== "complete";
 
@@ -140,7 +146,7 @@ export default function SetupPageClient() {
     }
 
     void load();
-  }, [hasHydrated, router, stageParam]);
+  }, [authBaby, hasHydrated, router, stageParam]);
 
   if (!hasHydrated || !loaded) {
     return <PageLoader label="Loading setup…" />;

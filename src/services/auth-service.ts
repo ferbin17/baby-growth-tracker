@@ -3,13 +3,13 @@ import "client-only";
 import { supabase } from "@/lib/supabase";
 import { fromBabyRow } from "@/services/baby-service";
 import { useAuthStore } from "@/store/auth-store";
-import type { BabyProfile } from "@/types";
+import type { AuthenticatedBaby, BabyProfile } from "@/types";
 import type { BabyRow } from "@/types/database";
 
 type LoginResult =
   | {
       success: true;
-      baby: BabyProfile;
+      baby: AuthenticatedBaby;
     }
   | {
       success: false;
@@ -41,11 +41,18 @@ export async function login(username: string, passcode: string): Promise<LoginRe
   }
 
   const baby = fromBabyRow(data as BabyRow);
+  const authenticatedBaby = toAuthenticatedBaby(baby);
 
-  useAuthStore.getState().setBaby(baby);
+  useAuthStore.getState().setBaby(authenticatedBaby);
 
   return {
     success: true,
-    baby,
+    baby: authenticatedBaby,
   };
+}
+
+export function toAuthenticatedBaby(baby: BabyProfile): AuthenticatedBaby {
+  const { username: _username, passcode: _passcode, ...authenticatedBaby } = baby;
+
+  return authenticatedBaby;
 }

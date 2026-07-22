@@ -1,7 +1,7 @@
 import "client-only";
 
 import { supabase } from "@/lib/supabase";
-import type { BabyProfile, Measurement } from "@/types";
+import type { AuthenticatedBaby, BabyProfile, Measurement } from "@/types";
 import type { BabyRow, MeasurementRow } from "@/types/database";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -176,6 +176,16 @@ export async function getBabyProfile() {
   return cachedBaby;
 }
 
+export async function getDBBabyProfile(id: number) {
+  const { data, error } = await supabase.from("babies").select("*").eq("id", id).maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? fromBabyRow(data as BabyRow) : null;
+}
+
 export async function deleteMeasurementsForBaby(babyId: number) {
   const { error } = await supabase.from("measurements").delete().eq("baby_id", babyId);
 
@@ -281,7 +291,7 @@ export async function deleteMeasurement(id: number) {
 }
 
 /** Insert any missing frequency-date rows up to today, plus the next upcoming slot. */
-export async function ensureMeasurementsForBaby(babyId: number, baby: BabyProfile) {
+export async function ensureMeasurementsForBaby(babyId: number, baby: AuthenticatedBaby) {
   const existing = await getMeasurements(babyId);
   const existingKeys = new Set(
     existing.map((row) => new Date(row.date).toISOString().slice(0, 10)),

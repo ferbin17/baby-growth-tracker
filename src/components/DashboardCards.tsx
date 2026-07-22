@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  getBabyProfile,
-  getLatestCompletedMeasurement,
-  getMeasurements,
-} from "@/services/baby-service";
+
+import { getLatestCompletedMeasurement, getMeasurements } from "@/services/baby-service";
+import { useAuthStore } from "@/store/auth-store";
+
 import { formatDisplayDate, getAgeLabel } from "@/utils/age";
 import { getWeightForAgeReference } from "@/utils/growth";
 import { formatHeightLabel, formatWeightLabel } from "@/utils/format";
 import { GrowthStatusChart } from "@/components/GrowthStatusChart";
 import { loadWhoData, type WhoPoint } from "@/utils/who";
-import type { BabyProfile, Measurement } from "@/types";
+import type { Measurement } from "@/types";
 import { getNextUpcomingMeasurement } from "@/utils/measurement";
 
 export function DashboardCards() {
-  const [baby, setBaby] = useState<BabyProfile | null>(null);
+  const baby = useAuthStore((state) => state.baby);
+
   const [latest, setLatest] = useState<Measurement | null>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [nextMeasurement, setNextMeasurement] = useState<Measurement | null>(null);
@@ -23,18 +23,14 @@ export function DashboardCards() {
 
   useEffect(() => {
     async function load() {
-      const profile = await getBabyProfile();
-
-      if (!profile) {
+      if (!baby) {
         return;
       }
 
-      setBaby(profile);
-
       const [latestRow, measurementRows, who] = await Promise.all([
-        getLatestCompletedMeasurement(profile.id!),
-        getMeasurements(profile.id!),
-        loadWhoData(profile.gender, "weight"),
+        getLatestCompletedMeasurement(baby.id!),
+        getMeasurements(baby.id!),
+        loadWhoData(baby.gender, "weight"),
       ]);
 
       setLatest(latestRow);
@@ -45,7 +41,7 @@ export function DashboardCards() {
     }
 
     void load();
-  }, []);
+  }, [baby]);
 
   const weightReference = useMemo(
     () => getWeightForAgeReference(measurements, whoWeight),
@@ -80,9 +76,7 @@ export function DashboardCards() {
           <div>
             <p className="text-sm font-medium text-slate-500">Weight-for-age reference</p>
 
-            <p className="text-xl font-semibold text-slate-900">
-              {weightReference.label}
-            </p>
+            <p className="text-xl font-semibold text-slate-900">{weightReference.label}</p>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               {weightReference.description}
