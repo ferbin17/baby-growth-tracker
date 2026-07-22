@@ -3,47 +3,61 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { MeasurementTable } from "@/components/MeasurementTable";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { getBabyProfile, getMeasurements, updateBabyProfile } from "@/services/baby-service";
+import { getMeasurements, updateBabyProfile } from "@/services/baby-service";
 import { useAuthStore } from "@/store/auth-store";
-import type { BabyProfile } from "@/types";
 import { hasPendingMeasurements } from "@/utils/measurement";
 
 export function MeasurementsPageClient() {
   const router = useRouter();
-  const [baby, setBaby] = useState<BabyProfile | null>(null);
-  const [isReady, setIsReady] = useState(false);
+
+  const baby = useAuthStore((state) => state.baby);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const setBaby = useAuthStore((state) => state.setBaby);
+
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     async function load() {
       if (!hasHydrated) return;
 
-      const profile = await getBabyProfile();
-      if (!profile?.id) {
+      if (!baby?.id) {
         router.replace("/setup");
         return;
       }
 
-      const rows = await getMeasurements(profile.id);
+      const rows = await getMeasurements(baby.id);
+
       if (!hasPendingMeasurements(rows)) {
-        await updateBabyProfile(profile.id, { stage: "complete" });
+        const updatedProfile = await updateBabyProfile(baby.id, {
+          stage: "complete",
+        });
+
+        if (updatedProfile) {
+          setBaby(updatedProfile);
+        }
+
         router.replace("/");
         return;
       }
 
-      const activeProfile =
-        profile.stage === "measure"
-          ? profile
-          : await updateBabyProfile(profile.id, { stage: "measure" });
+      if (baby.stage !== "measure") {
+        const updatedProfile = await updateBabyProfile(baby.id, {
+          stage: "measure",
+        });
 
-      setBaby(activeProfile);
+        if (updatedProfile) {
+          setBaby(updatedProfile);
+        }
+      }
+
       setIsReady(true);
     }
 
     void load();
-  }, [hasHydrated, router]);
+  }, [baby, hasHydrated, router, setBaby]);
 
   if (!hasHydrated || !isReady || !baby?.id) {
     return <PageLoader label="Loading measurements…" />;
@@ -56,6 +70,7 @@ export function MeasurementsPageClient() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-sky-100">Growth tracker</p>
+
               <h1 className="mt-2 text-3xl font-semibold">Measurements</h1>
             </div>
 

@@ -3,51 +3,46 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { RecordForm } from "@/components/RecordForm";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { ensureMeasurementsForBaby, getBabyProfile } from "@/services/baby-service";
+import { ensureMeasurementsForBaby } from "@/services/baby-service";
 import { useAuthStore } from "@/store/auth-store";
-import type { BabyProfile } from "@/types";
 import { frequencyLabel, hasPendingMeasurements } from "@/utils/measurement";
 
 export function RecordPageClient() {
   const router = useRouter();
-  const [baby, setBaby] = useState<BabyProfile | null>(null);
+
+  const { baby, hasHydrated } = useAuthStore();
+
   const [isReady, setIsReady] = useState(false);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
     async function load() {
       if (!hasHydrated) return;
 
-      const profile = await getBabyProfile();
-      if (!profile) {
+      if (!baby?.id) {
         router.replace("/setup");
         return;
       }
 
-      if (profile.stage !== "complete") {
+      if (baby.stage !== "complete") {
         router.replace("/measurements");
         return;
       }
 
-      if (!profile.id) {
-        router.replace("/");
-        return;
-      }
+      const rows = await ensureMeasurementsForBaby(baby.id, baby);
 
-      const rows = await ensureMeasurementsForBaby(profile.id, profile);
       if (!hasPendingMeasurements(rows)) {
         router.replace("/");
         return;
       }
 
-      setBaby(profile);
       setIsReady(true);
     }
 
     void load();
-  }, [hasHydrated, router]);
+  }, [baby, hasHydrated, router]);
 
   if (!hasHydrated || !isReady || !baby) {
     return <PageLoader label="Loading check-in…" />;
@@ -62,7 +57,9 @@ export function RecordPageClient() {
               <p className="text-sm uppercase tracking-[0.3em] text-emerald-100">
                 {frequencyLabel(baby.measurementFrequency)} record
               </p>
+
               <h1 className="mt-2 text-3xl font-semibold">Record check-in</h1>
+
               <p className="mt-2 max-w-xl text-sm text-emerald-100">
                 Log {baby.name}&apos;s weight, height, and notes for the current{" "}
                 {frequencyLabel(baby.measurementFrequency)} frequency day.

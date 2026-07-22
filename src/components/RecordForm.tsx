@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { ensureMeasurementsForBaby, upsertMeasurement } from "@/services/baby-service";
 import { formatDisplayDate, formatAgeFromDays } from "@/utils/age";
 import { frequencyLabel, getCurrentRecordMeasurement } from "@/utils/measurement";
-import type { BabyProfile, Measurement } from "@/types";
+import type { AuthenticatedBaby, Measurement } from "@/types";
 
 interface RecordFormProps {
-  baby: BabyProfile;
+  baby: AuthenticatedBaby;
 }
 
 type Draft = {
