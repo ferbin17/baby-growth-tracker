@@ -15,6 +15,7 @@ import { Line } from "react-chartjs-2";
 import { format } from "date-fns";
 
 import { loadWhoData, interpolateWhoPoint, type WhoPoint } from "@/utils/who";
+import { downloadMeasurementExport } from "@/utils/export";
 import type { AuthenticatedBaby, Measurement } from "@/types";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -143,7 +144,7 @@ export function GrowthStatusChart({
 
   return (
     <div className={wrapperClass}>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">Growth chart</p>
           <p className="text-lg font-semibold text-slate-900">
@@ -151,34 +152,53 @@ export function GrowthStatusChart({
           </p>
         </div>
 
-        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setMetric("weight")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              metric === "weight"
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Weight
-          </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <div className="inline-flex w-full max-w-[280px] rounded-full border border-slate-200 bg-white p-1 shadow-sm sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setMetric("weight")}
+              className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition sm:flex-none ${
+                metric === "weight"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Weight
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setMetric("height")}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              metric === "height"
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Height
-          </button>
+            <button
+              type="button"
+              onClick={() => setMetric("height")}
+              className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition sm:flex-none ${
+                metric === "height"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Height
+            </button>
+          </div>
+
+          <div className="inline-flex w-full max-w-[220px] rounded-full border border-slate-200 bg-white p-1 shadow-sm sm:w-auto">
+            <button
+              type="button"
+              onClick={() => downloadMeasurementExport(sortedMeasurements, metric, "csv")}
+              className="flex-1 rounded-full px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 sm:flex-none"
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadMeasurementExport(sortedMeasurements, metric, "excel")}
+              className="flex-1 rounded-full px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 sm:flex-none"
+            >
+              Excel
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mt-5 h-72">
+      <div className="mt-5 h-72 min-h-[18rem] w-full overflow-hidden">
         <Line options={options} data={data} />
       </div>
     </div>
